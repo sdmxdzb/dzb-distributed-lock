@@ -1,11 +1,11 @@
 package com.fxiaoke.dzb.distributedlock.service;
 
+import com.fxiaoke.dzb.distributedlock.RandomUtil;
 import com.fxiaoke.dzb.distributedlock.zookeeper.lock.ZkDistributedlock;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
-import lombok.extern.slf4j.Slf4j;
 
 /***
  *@author lenovo
@@ -16,19 +16,20 @@ import lombok.extern.slf4j.Slf4j;
 public class OrderServiceImpl implements OrderService {
 
     private  static Set<String> orderSet = new HashSet<>();
-
-    Lock lock = new ZkDistributedlock("/order1");
+    Lock lock = new ZkDistributedlock("/order");
 
     @Override
-    public String getCreateOrderNumber() {
+    public void getCreateOrderNumber() {
         String orderNumber =null;
         try {
             lock.lock();
-             orderNumber =System.currentTimeMillis()+UUID.randomUUID().toString();
+            //模拟生成订单编号
+             orderNumber = RandomUtil.getRandomNumber();
             if(orderSet.contains(orderNumber)){
-                System.out.println("重复编号:"+orderNumber);
-                return null;
+                System.out.println("已经存在订单编号="+orderNumber);
+                return ;
             }else {
+                System.out.println("新的订单编号="+orderNumber);
                 orderSet.add(orderNumber);
             }
         } catch (Exception e) {
@@ -36,6 +37,5 @@ public class OrderServiceImpl implements OrderService {
         } finally {
             lock.unlock();
         }
-        return orderNumber;
     }
 }

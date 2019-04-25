@@ -13,7 +13,7 @@ import org.I0Itec.zkclient.exception.ZkNodeExistsException;
 import org.apache.commons.lang3.StringUtils;
 
 /***
- *@author lenovo
+ *@author dzb
  *@date 2019/4/24 22:50
  *@Description:
  *@version 1.0
@@ -21,16 +21,16 @@ import org.apache.commons.lang3.StringUtils;
 public class ZkDistributedlock implements Lock {
     /*
      * 利用临时顺序节点来实现分布式锁
-     * 获取锁：取排队号（创建自己的临时顺序节点），然后判断自己是否是最小号，如是，则获得锁；不是，则注册前一节点的watcher,阻塞等待
+     * 获取锁：取排队号（创建自己临时节点），然后判断自己是否是最小号，如果是则获得锁；不是，则注册前一节点的watcher,阻塞等待其它节点释放锁。
      * 释放锁：删除自己创建的临时顺序节点
      */
     private String lockPath;
     private ZkClient client;
-    //当前的序号
+    /**当前的序号*/
     private ThreadLocal<String> currentPath = new ThreadLocal<String>();
-    //排在我前面的序号
+    /**排在我前面的序号*/
     private ThreadLocal<String> beforePath = new ThreadLocal<String>();
-    // 锁重入计数器
+   /**锁重入计数器*/
     private ThreadLocal<Integer> reenterCount = ThreadLocal.withInitial(() -> 0);
 
     public ZkDistributedlock(String lockPath) {
@@ -52,7 +52,9 @@ public class ZkDistributedlock implements Lock {
 
     @Override
     public void lock() {
+        //尝试加锁
         if (!tryLock()) {
+            //等待释放锁
             waitForLock();
             lock();
         }
@@ -63,23 +65,23 @@ public class ZkDistributedlock implements Lock {
         IZkDataListener listener = new IZkDataListener() {
             @Override
             public void handleDataChange(String dataPath, Object data) throws Exception {
-                System.out.println(Thread.currentThread().getName() + "-----监听到节点变动------->" + data);
+                System.out.println(Thread.currentThread().getName() + "-----监听节点有变化-------,data=" + data);
             }
 
             @Override
             public void handleDataDeleted(String dataPath) throws Exception {
-                System.out.println(Thread.currentThread().getName() + "-----监听到节点被删除，分布式锁被释放");
+                System.out.println(Thread.currentThread().getName() + "-----监听节点删除,释放锁----");
                 cdl.countDown();
             }
         };
-        //监听数据的变化
+        //监听之前节点的数据变化
         client.subscribeDataChanges(this.beforePath.get(), listener);
-        //如果存在，就阻塞自己
+        //如果存在，继续进入阻塞等待。
         if (this.client.exists(this.beforePath.get())) {
             try {
-                System.out.println(Thread.currentThread().getName() + "-----分布式锁没抢到，进入阻塞状态");
+                System.out.println(Thread.currentThread().getName() + "-----获取锁失败,继续等待阻塞 -----");
                 cdl.await();
-                System.out.println(Thread.currentThread().getName() + "-----释放分布式锁，被唤醒");
+                System.out.println(Thread.currentThread().getName() + "-----释放锁,唤醒等待----");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -95,11 +97,11 @@ public class ZkDistributedlock implements Lock {
 
     @Override
     public boolean tryLock() {
-        System.out.println(Thread.currentThread().getName() + "-----尝试获取分布式锁");
+        System.out.println(Thread.currentThread().getName() + "-----尝试获取分布式锁----");
         if (this.currentPath.get() == null || !client.exists(this.currentPath.get())) {
             String node = this.client.createEphemeralSequential(lockPath + "/", "locked");
             currentPath.set(node);
-            //reenterCount.set(0);
+            reenterCount.set(0);
         }
         // 获得所有的子
         List<String> children = this.client.getChildren(lockPath);
@@ -108,8 +110,8 @@ public class ZkDistributedlock implements Lock {
         // 判断当前节点是否是最小的
         if (currentPath.get().equals(lockPath + "/" + children.get(0))) {
             // 锁重入计数
-           // reenterCount.set(reenterCount.get() + 1);
-            System.out.println(Thread.currentThread().getName() + "-----获得分布式锁");
+            reenterCount.set(reenterCount.get() + 1);
+            System.out.println(Thread.currentThread().getName() + "-----获得分布式锁------");
             return true;
         } else {
             // 取到前一个
@@ -140,22 +142,22 @@ public class ZkDistributedlock implements Lock {
 
     @Override
     public void unlock() {
-        System.out.println(Thread.currentThread().getName() + "-----释放分布式锁");
-        /*if(reenterCount.get() > 1) {
+        System.out.println(Thread.currentThread().getName() + "-----释放分布式锁----");
+        if(reenterCount.get() > 1) {
             // 重入次数减1，释放锁
             reenterCount.set(reenterCount.get() - 1);
             return;
-        }*/
+        }
         // 删除节点
         if (this.currentPath.get() != null) {
             this.client.delete(this.currentPath.get());
             this.currentPath.set(null);
-            //this.reenterCount.set(0);
+            this.reenterCount.set(0);
         }
     }
   /*  @Override
     public void unlock() {
-        System.out.println(Thread.currentThread().getName() + "-----释放分布式锁");
+        System.out.println(Thread.currentThread().getName() + "-----release distributed lock----");
         client.delete(lockPath);
     }*/
 

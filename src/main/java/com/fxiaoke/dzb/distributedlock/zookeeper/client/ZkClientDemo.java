@@ -8,14 +8,14 @@ import org.I0Itec.zkclient.ZkClient;
 import org.apache.zookeeper.CreateMode;
 
 /***
- *@author lenovo
+ *@author dzb
  *@date 2019/4/19 23:18
- *@Description:
+ *@Description:  zk测试demo
  *@version 1.0
  */
 public class ZkClientDemo {
     private static final String URL = "localhost:2181";
-    private static final String path = "/zk";
+    private static final String path = "/fxiaoke";
 
     public static void main(String[] args) {
         ZkClient client = new ZkClient(URL);

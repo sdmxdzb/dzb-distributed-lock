@@ -16,20 +16,23 @@ import lombok.extern.slf4j.Slf4j;
 public class ZkLockTest {
 
     public static void main(String[] args) {
+        //模拟当前服务器数
         int services =5;
-        int resuestSize =100;
-        CyclicBarrier cyclicBarrier  = new CyclicBarrier(services*resuestSize);
+        //每台服务器并发数
+        int requestSize =100;
+        //栅栏处理并发
+        CyclicBarrier cyclicBarrier  = new CyclicBarrier(services*requestSize);
         for (int i = 0; i <services ; i++) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
                     OrderService orderService = new OrderServiceImpl();
                     System.out.println(Thread.currentThread().getName()+"----准备开始下单----");
-                    for (int j = 0; j < resuestSize; j++) {
+                    for (int j = 0; j < requestSize; j++) {
                         new  Thread(new Runnable() {
                             @Override
                             public void run() {
-                                //等待service,request 并发数请求I
+                                //等待service,request 并发数请求
                                 try {
                                     cyclicBarrier.await();
                                 } catch (InterruptedException e) {
@@ -37,8 +40,7 @@ public class ZkLockTest {
                                 } catch (BrokenBarrierException e) {
                                     e.printStackTrace();
                                 }
-                                String orderNumber =orderService.getCreateOrderNumber();
-                                System.out.println("订单编号:"+orderNumber);
+                               orderService.getCreateOrderNumber();
                             }
                         }).start();
                     }

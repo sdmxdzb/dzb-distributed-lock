@@ -2,7 +2,7 @@ package com.fxiaoke.dzb.distributedlock.service;
 
 public interface OrderService {
     /**
-     * 获取订单单号
+     * 生成订单
      * */
-    public String getCreateOrderNumber();
+    public void getCreateOrderNumber();
 }
