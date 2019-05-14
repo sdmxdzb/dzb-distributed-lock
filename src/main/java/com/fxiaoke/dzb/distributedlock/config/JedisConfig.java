@@ -30,12 +30,14 @@ public class JedisConfig {
     @Bean
     public JedisPool redisPoolFactory() {
         JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
-        /**最大能够保持idel状态的对象数 */
-        jedisPoolConfig.setMaxIdle(80000);
         /**最小能够保持idel状态的对象数*/
-        jedisPoolConfig.setMinIdle(1000);
+        jedisPoolConfig.setMinIdle(0);
+        /**最大能够保持idel状态的对象数 */
+        jedisPoolConfig.setMaxIdle(8);
         /**当池内没有返回对象时，最大等待时间*/
-        jedisPoolConfig.setMaxWaitMillis(3000);
+        jedisPoolConfig.setMaxWaitMillis(-1);
+        /**逐出连接的最小空闲时间 默认1800000毫秒(30分钟)*/
+        jedisPoolConfig.setMinEvictableIdleTimeMillis(1800000);
         /**当调用borrow Object方法时，是否进行有效性检查 */
         jedisPoolConfig.setTestOnBorrow(true);
         /**当调用return Object方法时，是否进行有效性检查*/
