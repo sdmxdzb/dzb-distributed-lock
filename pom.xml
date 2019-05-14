@@ -70,19 +70,18 @@
       </exclusions>
       <version>3.4.13</version>
     </dependency>
-
+    <!--zkClient 客户端-->
     <dependency>
       <groupId>com.101tec</groupId>
       <artifactId>zkclient</artifactId>
       <version>0.10</version>
     </dependency>
-
+    <!--apache curator 客户端-->
     <dependency>
       <groupId>org.apache.curator</groupId>
       <artifactId>curator-recipes</artifactId>
       <version>4.2.0</version>
     </dependency>
-
 
 
     <dependency>
