@@ -1,7 +1,9 @@
 package com.fxiaoke.dzb.distributedlock.zookeeper.curator;
 
+import java.util.concurrent.TimeUnit;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.data.Stat;
@@ -121,5 +123,25 @@ public class CuratorClientDemo {
             e.printStackTrace();
         }
         return stat == null ? true : false;
+    }
+
+
+    public  void lock(CuratorFramework client, String lockPath){
+        InterProcessMutex lock = new InterProcessMutex(client, lockPath);
+        try {
+            //等待三秒
+            if ( lock.acquire(3L, TimeUnit.SECONDS) )
+            {
+                try
+                {
+                    System.out.println("加锁");
+                } finally {
+                    System.out.println("释放锁");
+                    lock.release();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
